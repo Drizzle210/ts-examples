@@ -173,17 +173,16 @@ function getIsolatedLiquidationPrice(
     }
   }
 
-  if (positionSzi === 0) {
+  if (updatedPosition === 0) {
     rawUsd = 0;
   }
-  const ntli = updatedPosition * mid;
-  const accountValue = ntli + rawUsd;
+  const isolatedMargin = totalNtlPos / leverage.value;
   const updatedPosSideFloat = updatedPosition > 0 ? 1.0 : -1.0;
-  const correction = 1 - floatSide / maxToMaintenanceLeverage(maxLeverage);
+  const correction = 1 - updatedPosSideFloat / maxToMaintenanceLeverage(maxLeverage);
   const liquidationPrice =
     mid -
     (updatedPosSideFloat *
-      (accountValue - totalNtlPos / maxToMaintenanceLeverage(maxLeverage))) /
+      (isolatedMargin - totalNtlPos / maxToMaintenanceLeverage(maxLeverage))) /
       Math.abs(updatedPosition) /
       correction;
 
@@ -286,11 +285,13 @@ async function estimatedLiqPxAndExplanationExample(
     accountValue -
     crossMaintenanceMarginUsed +
     (Math.abs(szi) * markPx) / maxToMaintenanceLeverage(maxLeverage);
-
+  
   if (userLimitPx > markPx !== isBuyOrder) {
     markPx = userLimitPx;
   }
-  const totalNtlPos = userLimitPx * absUpdatedPosition;
+
+  const totalNtlPos = markPx * absUpdatedPosition;
+
   const { floatSide: positionSide } = parseSide(updatedPosition > 0);
 
   const liqPx =
